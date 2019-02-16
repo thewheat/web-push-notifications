@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test Push</title>
+    <meta name="author" content="">
+    <link rel="icon" href="../../favicon.ico">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/manifest.json">
+  <style type="text/css">
+    #log{
+      height: 20em;
+      width: 100%;
+      overflow: auto;
+
+    }
+  </style>
+
+</head>
+<body>
+  <h1>FCM Web Push Notifications</h1>
+  <ul>
+    <li>This is a sample showing how to use <a href="https://firebase.google.com/docs/cloud-messaging/js/client">Firebase Cloud Messaging (FCM) in a web browser</a></li>
+    <li>Requires setting up a <a href="https://firebase.google.com/">Firebase</a> project</li>
+    <li>Create one from the <a href="https://console.firebase.google.com">Firebase console</a></li>
+  </ul>
+  <button id="btnRequestPermission">Request Notifications</button>
+  <button id="btnDisplayNotification">Display Test Notification</button>
+  <button id="btnRegisterFCMToken">Register FCM Token</button>
+  <div id="log"></div>
+
+  <script type="text/javascript" src="jquery-3.3.1.min.js"></script>
+  <script type="text/javascript">
+
+    function log(str,data){
+      if (data == null)
+        console.log(str);
+      else
+        console.log(str,data);
+
+      var d = new Date();
+      str = d.toLocaleDateString() + " " + d.toLocaleTimeString() + ": " + str;
+      var el = $("<div></div>");
+      if(data){
+        el.text(str + "," + JSON.stringify(data));
+      }
+      else{
+        el.text(str);
+      }
+      $("#log").prepend(el);
+    }
+
+    $("#btnRequestPermission").click(function(){
+      log("Check if you have allowed notifications");
+      Notification.requestPermission(status => {
+        log('Notification permission status:', status);
+      });
+    });
+    $("#btnDisplayNotification").click(function(){
+      displayNotification();
+    });
+
+    $("#btnRegisterFCMToken").click(function(){
+      getToken();
+    });
+
+    navigator.serviceWorker.register('serviceworker.js', {scope: '/'})
+    .then(function(reg) {
+      log('Registration succeeded. Scope is ' + reg.scope);
+
+    }).catch(function(error) {
+      log('Registration failed with ' + error);
+    });
+
+    function displayNotification(payload) {
+      if (Notification.permission == 'granted') {
+        console.log("payload", payload);
+        if(!payload){
+          payload = {
+            notification : {
+            "title": "Push notifcation",
+                "body": "No payload so default value here",
+                "badge": "/logo.png"
+            },
+              "fcm_options": {
+                "link": "https://www.google.com"
+              },
+              "webpush":{
+              "fcm_options": {
+                "link": "https://www.yahoo.com"
+              }
+              }
+          }
+        }
+        console.log("payload", payload);
+        navigator.serviceWorker.getRegistration().then(function(reg) {
+          var time = Date.now() - 60*10;
+          var options = {
+            body: payload.notification.body,
+            icon: payload.notification.badge,
+        "webpush": {
+          "headers": {
+            "Urgency": "high"
+          },
+          "notification": {
+          "title": "Web title",
+            "body": "Web body",
+            "badge": "/logo.png"
+          },
+        }
+            
+          };
+          reg.showNotification(payload.notification.title, options);
+        });
+      }else{
+        log("No permission granted. Alert user to enable enotifications in the browser");
+      }
+    }    
+
+  </script>
+
+<script src="https://www.gstatic.com/firebasejs/5.8.2/firebase.js"></script>
+<script>
+  // Go to https://console.firebase.google.com
+  // Click / Create project
+  // Develop > Authentication 
+  // Web Setup
+  
+  var config = {
+    apiKey: "SEE STEPS ABOVE TO GET THESE DETAILS",
+    authDomain: "",
+    databaseURL: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+  };
+  firebase.initializeApp(config);
+  
+  var messaging = firebase.messaging();
+
+  function saveTokenToServer(token){
+    // production code should save this token on your server to be used for registrations / actual sending
+  }
+  function getToken(){
+    // Get Instance ID token. Initially this makes a network call, once retrieved
+    // subsequent calls to getToken will return from cache.
+    messaging.getToken().then(function(currentToken) {
+      if (currentToken) {
+        log("We have a token: " + currentToken);
+        saveTokenToServer(currentToken);
+      } else {
+        log('No Instance ID token available. Request permission to generate one.');
+      }
+    }).catch(function(err) {
+      log('An error occurred while retrieving token. ', err);    
+    });
+  }
+  // Callback fired if Instance ID token is updated.
+  messaging.onTokenRefresh(function() {
+    messaging.getToken().then(function(refreshedToken) {
+      log('Token refreshed.');
+      log("We have a token: " + refreshedToken);
+      saveTokenToServer(refreshedToken);
+    }).catch(function(err) {
+      log('Unable to retrieve refreshed token ', err);
+    });
+  });
+  
+  messaging.onMessage(function(payload) {
+      log('Message received. ', payload);
+      displayNotification(payload);
+  });
+
+</script>.  
+</body>
+</html>

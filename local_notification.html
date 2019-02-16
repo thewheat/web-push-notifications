@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Test Push</title>
+    <meta name="author" content="">
+    <link rel="icon" href="../../favicon.ico">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+	<link rel="manifest" href="/manifest.json">
+	<style type="text/css">
+		#log{
+			height: 20em;
+			width: 100%;
+			overflow: auto;
+
+		}
+	</style>
+
+</head>
+<body>
+	<h1>Local Notifications</h1>
+	<ul>
+		<li>This is a sample showing how to use Notifications in a web browser</li>
+		<li>Requires setting up a <a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API">service worker</a> and then using the <a href="https://developer.mozilla.org/en-US/docs/Web/API/notification">Notification API</a></li>
+		<li>No Firebase involved</li>
+	</ul>
+	<button id="btnRequestPermission">Request Notifications</button>
+	<button id="btnDisplayNotification">Display Test Notification</button>
+	<div id="log"></div>
+
+	<script type="text/javascript" src="jquery-3.3.1.min.js"></script>
+	<script type="text/javascript">
+		function log(str,data){
+			if (data == null)
+				console.log(str);
+			else
+				console.log(str,data);
+
+			var d = new Date();
+			str = d.toLocaleDateString() + " " + d.toLocaleTimeString() + ": " + str;
+			var el = $("<div></div>");
+			if(data){
+				el.text(str + "," + JSON.stringify(data));
+			}
+			else{
+				el.text(str);
+			}
+			$("#log").prepend(el);
+		}
+
+		navigator.serviceWorker.register('serviceworker.js', {scope: '/'})
+		.then(function(reg) {
+			log('Registration succeeded. Scope is ' + reg.scope);
+
+		}).catch(function(error) {
+			log('Registration failed with ' + error);
+		});
+
+		$("#btnRequestPermission").click(function(){
+			requestPermission();
+		});
+		$("#btnDisplayNotification").click(function(){
+			displayNotification();
+		});
+
+		function requestPermission(){
+			log("Check if you have allowed notifications");
+			Notification.requestPermission(status => {
+			  log('Notification permission status:', status, true);
+			});
+		}
+
+		function displayNotification(payload) {
+		  if (Notification.permission == 'granted') {
+		  	log("payload", payload);
+		  	if(!payload){
+		  		payload = {
+		  			notification : {
+						"title": "Push notifcation",
+				        "body": "No payload so default value here",
+				        "badge": "/logo.png"
+		  			}
+		  		}
+		  	}
+		  	log("payload", payload);
+		    navigator.serviceWorker.getRegistration().then(function(reg) {
+		      var time = Date.now() - 60*10;
+		      var options = {
+		        body: payload.notification.body,
+		        icon: payload.notification.badge,
+				"webpush": {
+				  "headers": {
+				    "Urgency": "high"
+				  },
+				  "notification": {
+					"title": "Web title",
+				    "body": "Web body",
+				    "badge": "/logo.png"
+				  },
+				}
+		        
+		      };
+		      reg.showNotification(payload.notification.title, options);
+		    });
+		  }else{
+		  	log("No permission granted. Alert user to enable enotifications in the browser");
+		  }
+		}		
+
+	</script>
+</body>
+</html>

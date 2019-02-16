@@ -1,0 +1,15 @@
+{
+  "name": "firebase-get-fcm-access-token",
+  "version": "1.0.0",
+  "description": "Retrieves Firebase Cloud Messaging (FCM) Access Token from a service account.json file",
+  "main": "index.js",
+  "dependencies": {
+    "googleapis": "^37.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
